@@ -1,0 +1,20 @@
+const {chromium}=require('playwright');(async()=>{const b=await chromium.launch();const base='file://'+process.argv[2]+'/index.html';const out=process.argv[3];
+const ctx=await b.newContext({viewport:{width:1440,height:900}});const p=await ctx.newPage();const errs=[];p.on('pageerror',e=>errs.push(e.message));
+await p.goto(base+'#overview');await p.waitForTimeout(600);console.log('first form',await p.locator('#ac-first').count(),'nav hidden',!(await p.locator('.sidebar').isVisible()));await p.screenshot({path:out+'/ac-first.png'});
+await p.fill('#ac-first [name=nome]','Valentim');await p.fill('#ac-first [name=email]','valentim.teste@gmail.com');await p.fill('#ac-first [name=pw]','segredo1');await p.fill('#ac-first [name=pw2]','segredo1');await p.click('#ac-first button');await p.waitForTimeout(600);
+console.log('hash',await p.evaluate(()=>location.hash),'nav:',(await p.locator('#navigation').innerText()).replace(/\n+/g,' | '));
+await p.click('#ac-demo');await p.waitForTimeout(800);console.log('users',await p.locator('.ac-in[data-k=nivel]').count());await p.screenshot({path:out+'/ac-admin.png',fullPage:true});
+// regra: dar finance ao setor Comercial? check preview
+console.log('prev:',(await p.locator('.ac-prev').innerText()).replace(/\n+/g,' | '));
+await p.click('#ac-out');await p.waitForTimeout(400);console.log('after logout login form',await p.locator('#ac-login').count());
+await p.click('#ac-entrar-demo'); await p.waitForTimeout(400); await p.evaluate(e => { const u = ArmantAcesso.users().find(x => x.email === e); if (u && u.nivel < 6) ArmantAcesso.verComo(u.id); }, 'financeiro.teste@gmail.com');await p.waitForTimeout(300);console.log('err:',await p.locator('.ac-err').innerText());
+await p.fill('#ac-login [name=pw]','armant123');await p.click('#ac-login button');await p.waitForTimeout(600);console.log('fin user hash',await p.evaluate(()=>location.hash),'nav:',(await p.locator('#navigation').innerText()).replace(/\n+/g,' | '));
+await p.goto(base+'#commercial');await p.waitForTimeout(400);console.log('commercial for fin:',(await p.locator('#view').innerText()).slice(0,40));
+await p.goto(base+'#acesso');await p.waitForTimeout(300);console.log('acesso for fin:',(await p.locator('#view').innerText()).slice(0,30));
+await p.click('#ac-out');await p.waitForTimeout(300);
+const m=await ctx.newPage();await m.setViewportSize({width:390,height:844});m.on('pageerror',e=>errs.push(e.message));await m.goto(base+'#overview');await m.waitForTimeout(500);
+await m.click('#ac-entrar-demo'); await m.waitForTimeout(400); await m.evaluate(e => { const u = ArmantAcesso.users().find(x => x.email === e); if (u && u.nivel < 6) ArmantAcesso.verComo(u.id); }, 'campo.teste@gmail.com');await m.waitForTimeout(600);
+console.log('campo user hash',await m.evaluate(()=>location.hash),'title',await m.locator('.cp-top strong').innerText(),await m.locator('.cp-top small').innerText(),'setup?',await m.locator('#cp-me').count());
+await m.goto(base+'#finance');await m.waitForTimeout(400);console.log('campo tries finance ->',await m.evaluate(()=>location.hash));
+await m.screenshot({path:out+'/ac-campo.png'});console.log('sair btn',await m.locator('#ac-out').count());
+console.log('errors',errs);await b.close();})();

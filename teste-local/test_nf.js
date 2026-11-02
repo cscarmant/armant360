@@ -1,0 +1,17 @@
+const {chromium}=require('playwright');(async()=>{const b=await chromium.launch();const base='file://'+process.argv[2]+'/index.html';const out=process.argv[3],dir=process.argv[4];
+const g=await b.newPage();await g.goto('file://'+dir+'/danfe.html');await g.pdf({path:dir+'/danfe.pdf',format:'A4'});await g.close();
+const p=await b.newPage({viewport:{width:1440,height:1000}});const errs=[];p.on('pageerror',e=>errs.push(e.message));
+await p.goto(base+'#materiais/lancamento');await p.waitForTimeout(400);
+await p.setInputFiles('#mt-nffile',dir+'/nfe.xml');await p.waitForTimeout(600);console.log('toast:',await p.locator('#toast').innerText());
+console.log('forn:',await p.inputValue('[data-mt-h=forn]'),'doc:',await p.inputValue('[data-mt-h=doc]'),'data:',await p.inputValue('[data-mt-h=data]'));
+console.log('lines:',await p.locator('select[data-mt-l]').evaluateAll(s=>s.map(x=>x.value)));
+console.log('info:',(await p.locator('.mt-nfinfo').innerText()).replace(/\n+/g,' | '));
+await p.screenshot({path:out+'/n-xml.png',fullPage:true});
+await p.click('#mt-save');await p.waitForTimeout(400);console.log('save toast:',await p.locator('#toast').innerText());
+await p.setInputFiles('#mt-nffile',dir+'/nfe.xml');await p.waitForTimeout(400);console.log('dup toast:',await p.locator('#toast').innerText());
+await p.goto(base+'#materiais/estoque');await p.waitForTimeout(300);console.log('MAT-003:',(await p.locator('tr:has(td:text-is("MAT-003"))').innerText()).replace(/\s+/g,' '));
+await p.goto(base+'#materiais/lancamento');await p.waitForTimeout(300);
+await p.setInputFiles('#mt-nffile',dir+'/danfe.pdf');await p.waitForTimeout(5000);console.log('pdf toast:',await p.locator('#toast').innerText());
+console.log('pdf lines:',await p.locator('select[data-mt-l]').evaluateAll(s=>s.map(x=>x.value)),await p.inputValue('[data-mt-h=doc]'));
+console.log('pdf info:',(await p.locator('.mt-nfinfo').innerText().catch(()=>'')).replace(/\n+/g,' | '));
+console.log('errors',errs);await b.close();})();

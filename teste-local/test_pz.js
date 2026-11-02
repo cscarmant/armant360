@@ -1,0 +1,16 @@
+const {chromium}=require('playwright');(async()=>{const b=await chromium.launch();const base='file://'+process.argv[2]+'/index.html';const out=process.argv[3];
+const p=await b.newPage({viewport:{width:1440,height:1000}});const errs=[];p.on('pageerror',e=>errs.push(e.message));
+await p.goto(base+'#obra/planejamento');await p.waitForTimeout(600);
+console.log('kpis:',(await p.locator('#ob-tab .kpi-grid').innerText()).replace(/\n+/g,' | '));
+console.log('row 3.10.1.02:',(await p.locator('tr:has(input[data-ob-pzi="3.10.1.02"])').innerText()).replace(/\s+/g,' '));
+await p.screenshot({path:out+'/p-plan.png'});
+await p.fill('input[data-ob-pzf="3.10.1.02"]','2026-12-15');await p.dispatchEvent('input[data-ob-pzf="3.10.1.02"]','change');await p.waitForTimeout(300);
+console.log('after edit:',(await p.locator('tr:has(input[data-ob-pzi="3.10.1.02"])').innerText()).replace(/\s+/g,' '),'toast',await p.locator('#toast').innerText());
+await p.click('[data-ob-pzo="bad"]');await p.waitForTimeout(300);console.log('bad rows',await p.locator('input[data-ob-pzi]').count());
+await p.goto(base+'#obra/avanco');await p.waitForTimeout(500);
+console.log('av cell before:',(await p.locator('[data-ob-pzc="3.10.1.03"]').innerText()).replace(/\s+/g,' '));
+await p.fill('input[data-ob-q="3.10.1.03"]','1');await p.waitForTimeout(200);console.log('av cell after qty:',(await p.locator('[data-ob-pzc="3.10.1.03"]').innerText()).replace(/\s+/g,' '));
+console.log('pz edited shows in avanco:',await p.inputValue('input[data-ob-pzf="3.10.1.02"]'));
+await p.screenshot({path:out+'/p-av.png'});
+console.log('overflow',await p.evaluate(()=>document.documentElement.scrollWidth-innerWidth));
+console.log('errors',errs);await b.close();})();

@@ -1,0 +1,40 @@
+// App de campo → Gasolina: foto do preço na bomba (obrigatória), preço do litro, conferência com o cupom; Frota mostra as fotos
+const { chromium } = require('playwright'); const path = require('path');
+(async () => {
+  const SITE = process.argv[2], OUT = process.argv[3], base = 'file://' + SITE + '/index.html';
+  const b = await chromium.launch(), p = await b.newPage({ viewport: { width: 420, height: 900 } }); const errs = []; p.on('pageerror', e => errs.push(e.message));
+  const ok = (n, c) => console.log((c ? 'ok   ' : 'FALHA') + ' ' + n);
+  await p.goto(base); await p.waitForTimeout(500); await p.click('#ac-entrar-demo'); await p.waitForTimeout(400); await p.evaluate(e => { const u = ArmantAcesso.users().find(x => x.email === e); if (u && u.nivel < 6) ArmantAcesso.verComo(u.id); }, 'valentim.arr@gmail.com'); await p.waitForTimeout(800);
+  if (await p.locator('[data-tr=skip]').count()) await p.click('[data-tr=skip]');
+  await p.evaluate(() => { const F = ArmantFrota; if (!F.veiculos().length) F.state.vei.push({ id: 'VEI-001', placa: 'TST1A23', modelo: 'Fiat Strada', km0: 10000 }); localStorage.setItem('a360frota', JSON.stringify(F.state)); });
+  await p.goto(base + '#campo/gasolina'); await p.waitForTimeout(600);
+  ok('campo de preço do litro e foto do preço na bomba', (await p.locator('#cp-gas [name=preco]').count()) === 1 && (await p.locator('#cp-gpfile').count()) === 1);
+  await p.fill('#cp-gas [name=km]', '10250'); await p.fill('#cp-gas [name=litros]', '40'); await p.fill('#cp-gas [name=valor]', '251,60'); await p.fill('#cp-gas [name=preco]', '6,29'); await p.fill('#cp-gas [name=posto]', 'Posto Teste');
+  ok('mostra o preço pelo cupom e confere com a bomba', /6,290 por litro · confere/.test(await p.locator('#cp-gcalc').innerText()));
+  await p.click('#cp-gas button[type=submit]'); await p.waitForTimeout(300);
+  ok('sem a foto do preço não registra', (await p.evaluate(() => ArmantFrota.state.abs.length)) === 0);
+  await p.setInputFiles('#cp-gfile', path.join(OUT, 'foto-teste.jpg')); await p.waitForTimeout(500);
+  await p.setInputFiles('#cp-gpfile', path.join(OUT, 'bomba.jpg')); await p.waitForTimeout(500);
+  ok('fotos aparecem e o que foi digitado continua', (await p.locator('.cp-fotos img').count()) === 2 && (await p.inputValue('#cp-gas [name=litros]')) === '40');
+  await p.screenshot({ path: OUT + '/gasolina.png', fullPage: true });
+  await p.click('#cp-gas button[type=submit]'); await p.waitForTimeout(500);
+  const a = await p.evaluate(() => ArmantFrota.state.abs.slice(-1)[0]);
+  ok('abastecimento salvo com preço e as duas fotos', a && a.preco === 6.29 && !!a.foto && !!a.fotoPreco && !a.difPreco);
+  // preço da bomba diferente do cupom: pede confirmação e marca
+  await p.goto(base + '#campo/gasolina'); await p.waitForTimeout(500);
+  await p.fill('#cp-gas [name=km]', '10600'); await p.fill('#cp-gas [name=litros]', '30'); await p.fill('#cp-gas [name=valor]', '210'); await p.fill('#cp-gas [name=preco]', '6,29');
+  ok('aviso de diferença em vermelho', /diferente da bomba/.test(await p.locator('#cp-gcalc').innerText()));
+  await p.setInputFiles('#cp-gpfile', path.join(OUT, 'bomba.jpg')); await p.waitForTimeout(500);
+  await p.click('#cp-gas button[type=submit]'); await p.waitForTimeout(300);
+  ok('pede confirmação antes de salvar', (await p.evaluate(() => ArmantFrota.state.abs.length)) === 1 && /Confirmar/.test(await p.locator('#cp-gas button[type=submit]').innerText()));
+  await p.click('#cp-gas button[type=submit]'); await p.waitForTimeout(400);
+  ok('salvo com a diferença registrada', await p.evaluate(() => { const x = ArmantFrota.state.abs.slice(-1)[0]; return x.difPreco > 3; }));
+  await p.setViewportSize({ width: 1440, height: 1000 });
+  await p.goto(base + '#frota/abastecimentos'); await p.waitForTimeout(600);
+  ok('Frota mostra as fotos e o preço da bomba', (await p.locator('.fr-th').count()) === 3 && /bomba/.test(await p.locator('#view').innerText()));
+  await p.locator('[data-fr-foto$="|fotoPreco"]').first().click(); await p.waitForTimeout(200);
+  ok('foto do preço abre ampliada', (await p.locator('.fr-lb img').count()) === 1);
+  await p.screenshot({ path: OUT + '/frota-abs.png' });
+  await p.click('[data-fr-lbx]');
+  console.log('erros de página:', errs.length ? errs : 'nenhum'); await b.close();
+})();

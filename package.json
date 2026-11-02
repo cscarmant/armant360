@@ -1,0 +1,17 @@
+{
+  "name": "armant360-backend",
+  "private": true,
+  "type": "module",
+  "description": "Armant 360: banco (Supabase), funções, importação, backup e site",
+  "scripts": {
+    "testar": "node scripts/testar-conexao.mjs",
+    "backup": "node scripts/backup.mjs",
+    "super": "node scripts/super.mjs"
+  },
+  "dependencies": {
+    "pg": "^8.13.0"
+  },
+  "devDependencies": {
+    "supabase": "^2.120.0"
+  }
+}

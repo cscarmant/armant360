@@ -1,0 +1,12 @@
+const {chromium}=require('playwright');(async()=>{const b=await chromium.launch();const base='file://'+process.argv[2]+'/index.html';const out=process.argv[3];
+const p=await b.newPage({viewport:{width:1440,height:900}});const errs=[];p.on('pageerror',e=>errs.push(e.message));
+await p.goto(base);await p.waitForTimeout(500);await p.click('#ac-entrar-demo'); await p.waitForTimeout(400); await p.evaluate(e => { const u = ArmantAcesso.users().find(x => x.email === e); if (u && u.nivel < 6) ArmantAcesso.verComo(u.id); }, 'valentim.arr@gmail.com');await p.waitForTimeout(800);
+await p.click('#ac-demo');await p.waitForTimeout(600);if(await p.locator('[data-tr=skip]').count())await p.click('[data-tr=skip]');
+await p.goto(base+'#auditoria');await p.waitForTimeout(400);await p.click('[data-au-view=console]');await p.waitForTimeout(300);console.log('mods',await p.locator('[data-cs-k]').count());
+await p.click('[data-cs-k="a360acesso"]');await p.waitForTimeout(200);console.log('campos',(await p.locator('[data-cs-f]').allInnerTexts()).map(x=>x.split('\n')[0]).join(','));
+await p.click('button.cad-card[data-cs-f="users"]');await p.waitForTimeout(200);console.log('rows',await p.locator('[data-cs-ed]').count());await p.screenshot({path:out+'/su-console.png'});
+await p.click('[data-cs-ed="0"]');await p.waitForTimeout(200);const j=JSON.parse(await p.inputValue('#cs-mj'));j.funcao='Editado pelo console';await p.fill('#cs-mj',JSON.stringify(j));await p.click('#cs-ok');await p.waitForTimeout(1500);
+await p.goto(base+'#acesso');await p.waitForTimeout(400);console.log('edited shows',(await p.locator('#view').innerText()).includes('Editado pelo console'));
+await p.goto(base+'#auditoria');await p.waitForTimeout(400);console.log('log has console',(await p.locator('.au-tw').innerText()).includes('Console do superadmin'));
+await p.click('[data-au-view=console]');await p.waitForTimeout(200);await p.locator('[data-cs-as]').filter({hasText:'Carlos'}).click();await p.waitForTimeout(800);console.log('ERRS',errs,await p.evaluate(()=>JSON.stringify([sessionStorage.getItem('a360sess'),(window.ArmantAcesso.real()||{}).nivel,(ArmantAcesso.user()||{}).nome,location.hash,document.querySelectorAll('.ac-as').length])));
+console.log("errors",errs);await b.close();})();

@@ -1,0 +1,22 @@
+const {chromium}=require('playwright');(async()=>{const b=await chromium.launch();const base='file://'+process.argv[2]+'/index.html';const out=process.argv[3];
+const p=await b.newPage({viewport:{width:1440,height:1000}});const errs=[];p.on('pageerror',e=>errs.push(e.message));
+await p.goto(base+'#obra/avanco');await p.waitForTimeout(500);
+const row=c=>p.locator('tr:has(input[data-ob-q="'+c+'"])');
+console.log('3.10.1.02 planned/done:',(await row('3.10.1.02').innerText()).replace(/\s+/g,' ').slice(0,160));
+await p.fill('input[data-ob-q="3.10.1.02"]','5');await p.fill('input[data-ob-q="2.1.01"]','1');await p.fill('input[data-ob-q="2.1.09"]','10');await p.fill('#ob-pobs','Teste excedente');await p.waitForTimeout(200);
+console.log('row cls',await row('3.10.1.02').getAttribute('class'),'|',await p.locator('[data-ob-res="3.10.1.02"]').innerText());
+console.log('row 2.1.01',await row('2.1.01').getAttribute('class'),'|',await p.locator('[data-ob-res="2.1.01"]').innerText());
+console.log('disabled?',await p.locator('#ob-avsave').isDisabled());console.log('side:',(await p.locator('#ob-side').innerText()).replace(/\n+/g,' | ').slice(0,600));
+await p.screenshot({path:out+'/a-avanco.png'});
+await p.click('#ob-avsave');await p.waitForTimeout(300);console.log('toast:',await p.locator('#toast').innerText());
+// só excedente
+await p.fill('input[data-ob-q="2.1.01"]','2');await p.waitForTimeout(150);console.log('only-exc disabled?',await p.locator('#ob-avsave').isDisabled());await p.click('#ob-avsave');await p.waitForTimeout(300);console.log('toast2:',await p.locator('#toast').innerText());
+await p.goto(base+'#obra/aditivos');await p.waitForTimeout(400);
+console.log('aditivos:',(await p.locator('#ob-tab').innerText()).replace(/\n+/g,' | ').slice(0,1500));
+const sel=p.locator('select[data-ob-ast]').first();await sel.selectOption('Aprovado');await p.waitForTimeout(300);
+console.log('kpi aprovados:',(await p.locator('#ob-tab .kpi-card').nth(1).innerText()).replace(/\n+/g,' | '));
+await p.screenshot({path:out+'/a-aditivos.png',fullPage:true});
+await p.goto(base+'#obra/relatorio');await p.waitForTimeout(300);console.log('lanc count',await p.locator('[data-ob-del]').count());
+await p.locator('[data-ob-del]').first().click();await p.locator('[data-ob-del]').first().click();await p.waitForTimeout(300);console.log('toast3:',await p.locator('#toast').innerText());
+await p.goto(base+'#obra/aditivos');await p.waitForTimeout(300);console.log('adit rows left',await p.locator('[data-ob-adel]').count());
+console.log('errors',errs);await b.close();})();

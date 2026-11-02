@@ -1,0 +1,27 @@
+const { chromium } = require('playwright');
+(async () => {
+  const SITE = process.argv[2], OUT = process.argv[3], base = 'file://' + SITE + '/index.html';
+  const b = await chromium.launch(), p = await b.newPage({ viewport: { width: 1440, height: 1000 } }); const errs = []; p.on('pageerror', e => errs.push(e.message));
+  const ok = (n, c) => console.log((c ? 'ok   ' : 'FALHA') + ' ' + n);
+  await p.goto(base); await p.waitForTimeout(500); await p.click('#ac-entrar-demo'); await p.waitForTimeout(400); await p.evaluate(e => { const u = ArmantAcesso.users().find(x => x.email === e); if (u && u.nivel < 6) ArmantAcesso.verComo(u.id); }, 'valentim.arr@gmail.com'); await p.waitForTimeout(800);
+  if (await p.locator('[data-tr=skip]').count()) await p.click('[data-tr=skip]');
+  await p.goto(base + '#timeline'); await p.waitForTimeout(800);
+  const n0 = await p.locator('.tl-row').count();
+  ok('obra real TJ-RS aparece no Gantt', (await p.locator('.tl-row.tl-real').count()) >= 1);
+  ok('cada obra tem o botão ▸', (await p.locator('.tl-tog').count()) >= 9);
+  await p.locator('[data-tl-sub="cc:CC-2026-001"]').click(); await p.waitForTimeout(200);
+  const g = await p.locator('.tl-sub.lvl1').count();
+  ok('abre os 4 grupos da EAP', g === 4);
+  await p.locator('.tl-sub.lvl1 .tl-tog').nth(2).click(); await p.waitForTimeout(200);
+  ok('grupo abre subgrupos', (await p.locator('.tl-sub.lvl2').count()) >= 1);
+  await p.locator('.tl-sub.lvl2 .tl-tog').first().click(); await p.waitForTimeout(200);
+  ok('subgrupo abre itens', (await p.locator('.tl-sub.lvl3').count()) >= 1);
+  await p.screenshot({ path: OUT + '/gantt-sub.png', fullPage: false, clip: { x: 236, y: 0, width: 1204, height: 1000 } });
+  await p.locator('[data-tl-sub="cc:CC-2026-001"]').click(); await p.waitForTimeout(200);
+  ok('recolhe tudo', (await p.locator('.tl-sub').count()) === 0);
+  await p.locator('[data-tl-sub="ob:OB-001"]').click(); await p.waitForTimeout(200);
+  ok('obra ilustrativa abre 5 fases', (await p.locator('.tl-sub.lvl1').count()) === 5);
+  await p.locator('[data-tl-project="OB-001"]').click(); await p.waitForTimeout(300);
+  ok('filtro por obra continua funcionando', (await p.locator('.tl-row:not(.tl-sub)').count()) === 1);
+  console.log('erros de página:', errs.length ? errs : 'nenhum'); await b.close();
+})();

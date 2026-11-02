@@ -1,0 +1,12 @@
+const {chromium}=require('playwright');(async()=>{const b=await chromium.launch();const base='file://'+process.argv[2]+'/index.html';const out=process.argv[3];
+const p=await b.newPage({viewport:{width:1440,height:900}});const errs=[];p.on('pageerror',e=>errs.push(e.message));
+await p.goto(base);await p.waitForTimeout(600);await p.click('#ac-req');await p.waitForTimeout(200);await p.screenshot({path:out+'/rq-form.png'});
+await p.fill('#ac-reqf [name=nome]','Maria Silva');await p.fill('#ac-reqf [name=email]','maria@empresa.com');await p.click('#ac-reqf button');await p.waitForTimeout(200);console.log('err',await p.locator('.ac-err').innerText());
+await p.fill('#ac-reqf [name=email]','maria.silva@gmail.com');await p.selectOption('#ac-reqf [name=setor]','Campo');await p.fill('#ac-reqf [name=funcao]','Técnica');await p.click('#ac-reqf button');await p.waitForTimeout(300);
+console.log('ok screen:',(await p.locator('.ac-card h1').innerText()),'mailto',(await p.locator('.ac-mail').getAttribute('href')||'').slice(0,90));
+await p.click('#ac-back');await p.waitForTimeout(200);await p.click('#ac-entrar-demo'); await p.waitForTimeout(400); await p.evaluate(e => { const u = ArmantAcesso.users().find(x => x.email === e); if (u && u.nivel < 6) ArmantAcesso.verComo(u.id); }, 'valentim.arr@gmail.com');await p.waitForTimeout(1500);
+console.log('popup',await p.locator('.nt-pop strong').innerText().catch(()=>'none'),'reqs panel',await p.locator('.ac-reqs .at-card').count());
+await p.evaluate(()=>document.querySelectorAll('.nt-pop').forEach(x=>x.remove()));await p.check('[data-rq-o] >> nth=0');await p.click('[data-rq-ok]');await p.waitForTimeout(500);const t=await p.locator('#toast').innerText();console.log('aprov',t);const pw=(t.match(/Senha inicial: (\w+)/)||[])[1];
+await p.evaluate(()=>document.getElementById('ac-out').click());await p.waitForTimeout(300);await p.click('#ac-entrar-demo'); await p.waitForTimeout(400); await p.evaluate(e => { const u = ArmantAcesso.users().find(x => x.email === e); if (u && u.nivel < 6) ArmantAcesso.verComo(u.id); }, 'maria.silva@gmail.com');await p.waitForTimeout(500);
+console.log('maria sees',await p.locator('.ac-card h1').innerText().catch(()=>'none'));await p.fill('#ac-pw [name=pw]','senhaMaria1');await p.fill('#ac-pw [name=pw2]','senhaMaria1');await p.click('#ac-pw button');await p.waitForTimeout(500);console.log('maria hash',await p.evaluate(()=>location.hash));
+console.log('errors',errs);await b.close();})();

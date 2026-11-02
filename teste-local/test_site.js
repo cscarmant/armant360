@@ -1,0 +1,22 @@
+const {chromium}=require('playwright');
+(async()=>{const b=await chromium.launch();const base='file://'+process.argv[2]+'/index.html';const out=process.argv[3];
+const p=await b.newPage({viewport:{width:1440,height:1000}});const errs=[];p.on('pageerror',e=>errs.push(e.message));p.on('console',m=>{if(m.type()==='error')errs.push(m.text())});
+for(const h of ['overview','projects','timeline','finance','commercial','operations','catalog']){await p.goto(base+'#'+h);await p.waitForTimeout(500);if(h==='overview'||h==='projects')await p.screenshot({path:`${out}/s-${h}.png`});}
+console.log('nav:',(await p.locator('#navigation').innerText()).replace(/\n+/g,' | '));
+await p.goto(base+'#obra/avanco');await p.waitForTimeout(700);
+console.log('title:',await p.locator('#page-title').innerText(),'| notice:',(await p.locator('.demo-notice p').innerText()).slice(0,40));
+await p.fill('input[data-ob-av="2.1.05"]','50');await p.selectOption('select[data-ob-avm="3.10.1.01"]','90');await p.waitForTimeout(300);
+await p.screenshot({path:`${out}/s-avanco.png`});
+await p.click('#ob-avsave');await p.waitForTimeout(300);
+await p.goto(base+'#obra/andamento');await p.waitForTimeout(400);
+console.log('andamento:',(await p.locator('#ob-tab').innerText()).replace(/\n+/g,' | ').slice(0,90));
+await p.goto(base+'#obra/medicao');await p.waitForTimeout(400);
+console.log('exec col 2.1.05:',await p.locator('tr:has(input[data-ob-p="2.1.05"]) td:nth-child(4)').innerText());
+await p.fill('input[data-ob-p="2.1.09"]','50');await p.waitForTimeout(200);
+console.log('fat:',(await p.locator('#ob-fat .kpi-number').innerText()));
+await p.screenshot({path:`${out}/s-medicao.png`});
+await p.goto(base+'#finance');await p.waitForTimeout(300);await p.selectOption('#period','sep');await p.waitForTimeout(300);
+console.log('notice back:',(await p.locator('.demo-notice p').innerText()).slice(0,40));
+await p.goto(base+'#obra');await p.waitForTimeout(400);console.log('obra after period ok:',(await p.locator('#page-title').innerText()));
+await p.setViewportSize({width:400,height:900});await p.goto(base+'#obra/medicao');await p.waitForTimeout(400);console.log('mobile scrollW',await p.evaluate(()=>document.documentElement.scrollWidth));await p.screenshot({path:`${out}/s-mobile.png`});
+console.log('errors',errs);await b.close();})();

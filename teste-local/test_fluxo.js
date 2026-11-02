@@ -1,0 +1,34 @@
+// Fluxo de obras dentro do sistema: botão da obra abre #fluxo, 63 tarefas em 10 etapas, detalhe, filtros, matriz, PDF para baixar
+const { chromium } = require('playwright');
+(async () => {
+  const SITE = process.argv[2], OUT = process.argv[3], base = 'file://' + SITE + '/index.html';
+  const b = await chromium.launch(), p = await b.newPage({ viewport: { width: 1366, height: 900 } }); const errs = []; p.on('pageerror', e => errs.push(e.message));
+  const ok = (n, c) => console.log((c ? 'ok   ' : 'FALHA') + ' ' + n);
+  await p.goto(base); await p.waitForTimeout(400); await p.click('#ac-entrar-demo'); await p.waitForTimeout(800); if (await p.locator('[data-tr=skip]').count()) await p.click('[data-tr=skip]');
+  await p.goto(base + '#obra'); await p.waitForTimeout(500);
+  const bt = p.locator('.ob-bpm'); ok('botão do fluxo na obra', /Fluxo de obras/.test(await bt.innerText()) && (await bt.getAttribute('target')) === null);
+  await bt.click(); await p.waitForTimeout(500);
+  ok('abre a tela do fluxo', (await p.evaluate(() => location.hash)) === '#fluxo' && /Fluxo de obras/.test(await p.locator('#page-title').innerText()));
+  ok('63 tarefas em 10 etapas', await p.locator('.fx-card').count() === 63 && await p.locator('.fx-etapa').count() === 10);
+  if (OUT) await p.screenshot({ path: OUT + '/shot_fluxo.png' });
+  await p.click('[data-fx-t="2.4"]'); await p.waitForTimeout(300);
+  const det = await p.locator('#fx-det').innerText();
+  ok('detalhe da tarefa 2.4 mostra quem executa e aprova', /R\.O\./.test(det) && /Aprovador/.test(det) && /Diretoria/.test(det));
+  await p.selectOption('#fx-area', 'R.O.'); await p.waitForTimeout(300);
+  const nRO = await p.locator('.fx-card').count(); ok('filtro por área (R.O.)', nRO > 10 && nRO < 63);
+  await p.selectOption('#fx-area', ''); await p.selectOption('#fx-et', '8'); await p.waitForTimeout(300);
+  ok('filtro por etapa (Medições: 9)', await p.locator('.fx-card').count() === 9);
+  await p.selectOption('#fx-et', '0'); await p.fill('#fx-q', 'as built'); await p.waitForTimeout(300);
+  ok('busca', await p.locator('.fx-card').count() === 2 && (await p.evaluate(() => document.activeElement.id)) === 'fx-q');
+  await p.fill('#fx-q', ''); await p.click('a[href="#fluxo/matriz"]'); await p.waitForTimeout(400);
+  ok('matriz com 63 linhas e 11 áreas', await p.locator('.fx-row').count() === 63 && await p.locator('.fx-mx thead th').count() === 12);
+  const pdf = p.locator('a[download]'); ok('PDF para baixar', (await pdf.getAttribute('href')) === 'docs/Fluxo_Obras_Armant_BPM_RACI.pdf');
+  await p.goto(base + '#projects'); await p.waitForTimeout(400);
+  ok('ao sair, o aviso e as ações do topo voltam', await p.evaluate(() => { const n = document.querySelector('.demo-notice'), a = document.querySelector('.heading-actions'); return (!n || n.style.display !== 'none' || document.body.classList.contains('sx-on')) && (!a || a.style.visibility !== 'hidden'); }));
+  await p.goto(base + '#setor/engenharia'); await p.waitForTimeout(400);
+  ok('Engenharia (modo simples) tem o Fluxo de obras', await p.locator('.sx-btn[href="#fluxo"]').count() === 1);
+  await p.goto(base + '#obra/OB-002'); await p.waitForTimeout(400);
+  ok('obra fictícia também tem o botão', await p.locator('.ob-bpm[href="#fluxo"]').count() === 1);
+  ok('sem erros', errs.length === 0); if (errs.length) console.log(errs);
+  await b.close();
+})();

@@ -1,0 +1,16 @@
+const {chromium}=require('playwright');(async()=>{const b=await chromium.launch();const base='file://'+process.argv[2]+'/index.html';const out=process.argv[3];
+const p=await b.newPage({viewport:{width:1440,height:1000}});const errs=[];p.on('pageerror',e=>errs.push(e.message));
+await p.goto(base+'#commercial');await p.waitForTimeout(500);console.log('cols',await p.locator('.kb-col').count(),'cards',await p.locator('.kb-card').count());
+await p.click('#kb-new');await p.waitForTimeout(300);await p.selectOption('[name=cli]','CLI-001');await p.fill('[name=titulo]','PMOC anual do Foro Central');await p.fill('[name=valor]','180.000,00');await p.fill('[name=resp]','Valentim');await p.fill('[name=prox]','Visita técnica');await p.fill('[name=proxData]','2026-10-20');
+await p.click('#cad-neg button[type=submit]');await p.waitForTimeout(400);console.log('hash',await p.evaluate(()=>location.hash),'toast',await p.locator('#toast').innerText());
+console.log('prosp col:',(await p.locator('.kb-prosp').innerText()).replace(/\n+/g,' | '));
+await p.click('[data-kb-mv="NEG-002"][data-to="visita"]');await p.waitForTimeout(200);
+await p.dragAndDrop('[data-kb-id="NEG-002"]','.kb-prop');await p.waitForTimeout(300);console.log('after drag in prop:',await p.locator('.kb-prop [data-kb-id="NEG-002"]').count(),'toast',await p.locator('#toast').innerText());
+await p.dragAndDrop('[data-kb-id="NEG-002"]','.kb-ganha');await p.waitForTimeout(300);
+await p.screenshot({path:out+'/k-board.png'});
+await p.click('[data-kb-id="NEG-002"] .kb-gen');await p.waitForTimeout(300);console.log('dem form nome:',await p.inputValue('[name=nome]'),await p.inputValue('[name=valor]'));
+await p.click('#cad-dem button[type=submit]');await p.waitForTimeout(400);console.log('cc hash',await p.evaluate(()=>location.hash));
+await p.goto(base+'#commercial');await p.waitForTimeout(300);console.log('ganha col:',(await p.locator('.kb-ganha').innerText()).replace(/\n+/g,' | '));
+await p.goto(base+'#negociacoes/NEG-002');await p.waitForTimeout(300);console.log('hist:',(await p.locator('.kb-hist').innerText()).replace(/\n+/g,' | '));
+const m=await b.newPage({viewport:{width:390,height:844}});await m.goto(base+'#commercial');await m.waitForTimeout(400);console.log('mobile overflow',await m.evaluate(()=>document.documentElement.scrollWidth-innerWidth));
+console.log('errors',errs);await b.close();})();

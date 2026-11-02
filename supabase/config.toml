@@ -1,0 +1,11 @@
+# Armant 360 · configuração do Supabase CLI (as telas de login e URLs são ajustadas pelo 06-login-google.ps1)
+project_id = "armant360"
+
+[functions.admin]
+verify_jwt = true
+
+[functions.aviso-email]
+verify_jwt = false
+
+[functions.email]
+verify_jwt = true

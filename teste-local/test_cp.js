@@ -1,0 +1,24 @@
+const {chromium}=require('playwright');(async()=>{const b=await chromium.launch();const base='file://'+process.argv[2]+'/index.html';const out=process.argv[3],dir=process.argv[4];
+const ctx=await b.newContext({viewport:{width:390,height:844},isMobile:true,hasTouch:true});const p=await ctx.newPage();const errs=[];p.on('pageerror',e=>errs.push(e.message));
+// preparar: veículo e material em estoque + entrega para a obra
+await p.goto(base+'#frota');await p.waitForTimeout(300);await p.fill('#fr-vei [name=placa]','ABC1D23');await p.fill('#fr-vei [name=modelo]','Fiat Strada');await p.fill('#fr-vei [name=km0]','42000');await p.click('#fr-vei button[type=submit]');
+await p.goto(base+'#materiais/lancamento');await p.waitForTimeout(300);await p.fill('[data-mt-h=forn]','Dufrio');await p.selectOption('select[data-mt-l="0"]','MAT-003');await p.fill('input[data-mt-l="0"][data-k=q]','10');await p.fill('input[data-mt-l="0"][data-k=pu]','500');await p.click('#mt-save');
+await p.goto(base+'#materiais/entrega');await p.waitForTimeout(300);await p.selectOption('[data-mt-h=cc]','CC-2026-001');await p.fill('[data-mt-h=rec]','Obra');await p.selectOption('select[data-mt-l="0"]','MAT-003');await p.fill('input[data-mt-l="0"][data-k=q]','4');await p.click('#mt-save');await p.waitForTimeout(200);
+await p.goto(base+'#campo');await p.waitForTimeout(400);console.log('setup?',await p.locator('#cp-me').count());
+await p.fill('#cp-me [name=nome]','Carlos Souza');await p.fill('#cp-me [name=funcao]','Técnico de refrigeração');await p.click('#cp-me button');await p.waitForTimeout(300);
+await p.screenshot({path:out+'/cp-home0.png',fullPage:true});
+await p.click('[data-cp=chegada]');await p.waitForTimeout(200);console.log('toast',await p.locator('#toast').innerText());
+await p.click('a[href="#campo/andamento"]');await p.waitForTimeout(300);await p.fill('#cp-q','condensadora');await p.waitForTimeout(200);console.log('res',await p.locator('#cp-res li').count());
+await p.fill('input[data-cp-q="3.10.1.02"]','1');await p.fill('#cp-aobs','ala norte');await p.screenshot({path:out+'/cp-and.png',fullPage:true});await p.click('[data-cp=lancar]');await p.waitForTimeout(300);console.log('toast',await p.locator('#toast').innerText());
+await p.click('a[href="#campo/pedido"]');await p.waitForTimeout(200);await p.selectOption('[data-cp-pm="0"]','MAT-010');await p.fill('[data-cp-pq="0"]','2');await p.click('#cp-ped button[type=submit]');await p.waitForTimeout(200);console.log('toast',await p.locator('#toast').innerText());
+await p.goto(base+'#campo/receber');await p.waitForTimeout(200);console.log('rom',await p.locator('.cp-rom').count());await p.click('[data-cp-conf]');await p.waitForTimeout(200);console.log('toast',await p.locator('#toast').innerText());
+await p.goto(base+'#campo/ocorrencia');await p.waitForTimeout(200);await p.click('[data-cp-tipo="Segurança"]');await p.setInputFiles('#cp-file',dir+'/foto.jpg');await p.waitForTimeout(800);await p.fill('#cp-oc [name=txt]','Andaime sem guarda-corpo no 2º pavimento');await p.click('#cp-oc button[type=submit]');await p.waitForTimeout(300);console.log('toast',await p.locator('#toast').innerText());
+await p.goto(base+'#campo/veiculo');await p.waitForTimeout(200);console.log('kmI',await p.inputValue('#cp-vei [name=kmI]'));await p.fill('#cp-vei [name=kmF]','42030');await p.click('#cp-vei button[type=submit]');await p.waitForTimeout(200);console.log('toast',await p.locator('#toast').innerText());
+await p.screenshot({path:out+'/cp-home.png',fullPage:true});console.log('timeline:',(await p.locator('.cp-tl').innerText()).replace(/\n+/g,' | '));
+console.log('overflow',await p.evaluate(()=>document.documentElement.scrollWidth-innerWidth));
+const d=await ctx.newPage();await d.setViewportSize({width:1440,height:1000});
+await d.goto(base+'#materiais/entrega');await d.waitForTimeout(300);console.log('pedidos panel:',(await d.locator('section:has(h2:text("Pedidos das obras"))').innerText().catch(()=>'none')).replace(/\n+/g,' | ').slice(0,200));
+await d.click('[data-mt-ped]');await d.waitForTimeout(300);console.log('entrega prefilled cc:',await d.inputValue('[data-mt-h=cc]'),await d.locator('select[data-mt-l]').evaluateAll(x=>x.map(y=>y.value)));
+await d.goto(base+'#cc/CC-2026-001');await d.waitForTimeout(300);console.log('cc diario:',(await d.locator('section:has(h2:text("Diário de campo"))').innerText()).replace(/\n+/g,' | ').slice(0,250));await d.screenshot({path:out+'/cp-cc.png',fullPage:true});
+await d.goto(base+'#frota/uso');await d.waitForTimeout(300);console.log('frota uso rows',await d.locator('#fr-tab tbody tr').count());
+await b.close();console.log('errors',errs);})();

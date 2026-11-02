@@ -1,0 +1,20 @@
+# ambiente e dependências
+.env
+node_modules/
+backups/
+publicar/
+supabase/.temp/
+supabase/.branches/
+*.log
+teste-local/saida/
+
+# Dados reais da Armant: ficam fora do Git (vão para o banco pelo powershell/04-importar-dados.ps1)
+web/obras-data.js
+web/estoque-data.js
+dados-reais-uso-interno/
+*.xlsx
+*.xls
+*.eml
+*backup*.json
+*.pfx
+*.p12

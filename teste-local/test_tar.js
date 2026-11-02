@@ -1,0 +1,25 @@
+const {chromium}=require('playwright');(async()=>{const b=await chromium.launch();const base='file://'+process.argv[2]+'/index.html';const out=process.argv[3],dir=process.argv[4];
+const ctx=await b.newContext();const d=await ctx.newPage();await d.setViewportSize({width:1440,height:1000});const errs=[];d.on('pageerror',e=>errs.push(e.message));
+await d.goto(base+'#operations');await d.waitForTimeout(400);console.log('prog link',await d.locator('a[href="#programacao"]').count());
+await d.goto(base+'#programacao');await d.waitForTimeout(400);console.log('sugestões',await d.locator('[data-pg-sug]').count());
+await d.locator('[data-pg-sug]').first().click();const f=n=>'#pg-form [name='+n+']';console.log('sug item',await d.inputValue(f('eap')));
+await d.fill(f('titulo'),'Instalar condensadora 12 HP');await d.fill(f('eap'),'3.10.1.02');await d.fill(f('qtd'),'1');await d.fill(f('resp'),'Carlos Souza');await d.selectOption(f('prio'),'Alta');await d.fill(f('desc'),'Usar o guindauto. Conferir base.');await d.click('#pg-form button[type=submit]');await d.waitForTimeout(200);
+await d.fill(f('titulo'),'Isolar tubulação do 1º pavimento');await d.fill(f('eap'),'');await d.fill(f('qtd'),'');await d.fill(f('resp'),'Carlos Souza');await d.click('#pg-form button[type=submit]');await d.waitForTimeout(200);
+await d.fill(f('titulo'),'Outra pessoa');await d.fill(f('resp'),'Maria');await d.click('#pg-form button[type=submit]');await d.waitForTimeout(200);console.log('tasks listed',await d.locator('.pg-task').count());
+await d.screenshot({path:out+'/pg.png',fullPage:true});
+const m=await ctx.newPage();await m.setViewportSize({width:390,height:844});m.on('pageerror',e=>errs.push(e.message));
+await m.goto(base+'#campo');await m.waitForTimeout(400);if(await m.locator('#cp-me').count()){await m.fill('#cp-me [name=nome]','Carlos Souza');await m.click('#cp-me button');await m.waitForTimeout(300);}
+console.log('my tasks',await m.locator('.cp-task').count());await m.screenshot({path:out+'/cp-tasks.png',fullPage:true});
+await m.locator('.cp-task').first().click();await m.waitForTimeout(300);console.log('task title',await m.locator('.cp-card h2').first().innerText());
+await m.click('#cp-tar button[type=submit]');await m.waitForTimeout(200);console.log('no photo:',await m.locator('#toast').innerText());
+await m.setInputFiles('#cp-tfile',dir+'/foto.jpg');await m.waitForTimeout(700);await m.setInputFiles('#cp-tfile',dir+'/foto.jpg');await m.waitForTimeout(700);console.log('fotos',await m.locator('.cp-ft').count(),'qtd',await m.inputValue('#cp-tar [name=qtd]'));
+await m.fill('#cp-tar [name=com]','Condensadora instalada e nivelada.');await m.screenshot({path:out+'/cp-task.png',fullPage:true});await m.click('#cp-tar button[type=submit]');await m.waitForTimeout(400);console.log('done:',await m.locator('#toast').innerText());
+await m.locator('.cp-task').nth(1).click();await m.waitForTimeout(300);await m.click('[data-cp-st=parcial]');await m.waitForTimeout(200);await m.setInputFiles('#cp-tfile',dir+'/foto.jpg');await m.waitForTimeout(700);await m.click('#cp-tar button[type=submit]');await m.waitForTimeout(200);console.log('need comment:',await m.locator('#toast').innerText());
+await m.fill('#cp-tar [name=com]','Faltou isolamento 3/8, pedi ao almoxarifado.');await m.click('#cp-tar button[type=submit]');await m.waitForTimeout(300);
+await m.click('a[href="#campo/relatorio"]');await m.waitForTimeout(400);console.log('rdo:',(await m.locator('.rp-doc').innerText()).replace(/\n+/g,' | ').slice(0,400));await m.screenshot({path:out+'/cp-rdo.png',fullPage:true});
+await d.reload();await d.waitForTimeout(400);console.log('office statuses:',await d.locator('.pg-task .status').allInnerTexts(),'thumbs',await d.locator('.pg-th').count());
+await d.click('[data-rp=rdo]');await d.waitForTimeout(300);console.log('office rdo tasks',await d.locator('.rp-ov .rp-t').count());await d.screenshot({path:out+'/pg-rdo.png'});
+await d.click('[data-rp=close]');await d.goto(base+'#obra/relatorio');await d.waitForTimeout(300);console.log('lanc from task:',(await d.locator('#ob-tab').innerText()).includes('Tarefa TAR-0001'));
+await d.goto(base+'#overview');await d.waitForTimeout(300);console.log('notice restored:',(await d.locator('.demo-notice p').innerText()).slice(0,25));
+console.log('overflow m',await m.evaluate(()=>document.documentElement.scrollWidth-innerWidth));
+console.log('errors',errs);await b.close();})();
